@@ -1,0 +1,4 @@
+interface:
+  display_name: "GitHub Sync Submit"
+  short_description: "Sync latest code before GitHub commits and pushes"
+  default_prompt: "Use $github-submit-sync when submitting code to GitHub so the local branch syncs before commit and push."
