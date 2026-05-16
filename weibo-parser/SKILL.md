@@ -28,12 +28,12 @@ metadata:
 
 1. 确认 CDP Proxy 可用（自包含，无需 web-access skill）：
    ```bash
-   node "/Users/zhou/.claude/skills/weibo-parser/scripts/check-deps.mjs"
+   node "{SKILL_DIR}/scripts/check-deps.mjs"
    ```
 
 2. 运行爬取脚本（支持 UID 或主页链接）：
    ```bash
-   python3 "/Users/zhou/.claude/skills/weibo-parser/scripts/scrape_weibo.py" {用户UID或链接} --output ~/Downloads/weibo_{UID}.json
+   python3 "{SKILL_DIR}/scripts/scrape_weibo.py" {用户UID或链接} --output ~/Downloads/weibo_{UID}.json
    ```
    脚本自动从链接中提取 UID，例如 `https://weibo.com/u/1234567890` → UID `1234567890`。
    输出 JSON 文件路径和用户昵称。
@@ -42,12 +42,12 @@ metadata:
 
 3. 导出 Markdown：
    ```bash
-   python3 "/Users/zhou/.claude/skills/weibo-parser/scripts/export_markdown.py" ~/Downloads/weibo_{UID}.json -n "{昵称}" -o ~/Downloads/{昵称}微博归档.md
+   python3 "{SKILL_DIR}/scripts/export_markdown.py" ~/Downloads/weibo_{UID}.json -n "{昵称}" -o ~/Downloads/{昵称}微博归档.md
    ```
 
 4. 生成统计图表：
    ```bash
-   python3 "/Users/zhou/.claude/skills/weibo-parser/scripts/generate_charts.py" ~/Downloads/weibo_{UID}.json -n "{昵称}" -o ~/Downloads/{昵称}微博统计图.png
+   python3 "{SKILL_DIR}/scripts/generate_charts.py" ~/Downloads/weibo_{UID}.json -n "{昵称}" -o ~/Downloads/{昵称}微博统计图.png
    ```
 
 5. 向用户展示图表（用 Read 工具查看 PNG），并输出统计摘要。
@@ -56,7 +56,7 @@ metadata:
 
 6. 生成 analysis prompts（可选，了解 10 个维度）：
    ```bash
-   python3 "/Users/zhou/.claude/skills/weibo-parser/scripts/analyze_prompts.py" ~/Downloads/{昵称}微博归档.md
+   python3 "{SKILL_DIR}/scripts/analyze_prompts.py" ~/Downloads/{昵称}微博归档.md
    ```
 
 7. **并行启动 10 个 subagent**，每个从一个维度深度分析 Markdown 文件。必须使用 Agent 工具，subagent_type=general-purpose。
