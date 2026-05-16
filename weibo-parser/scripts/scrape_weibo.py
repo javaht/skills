@@ -44,9 +44,15 @@ def cdp_eval(target, js_code, proxy_port=3456, timeout=15):
 
 def cdp_new_tab(url, proxy_port=3456, timeout=10):
     """创建新的 CDP tab 并返回 targetId"""
-    req_url = f"http://localhost:{proxy_port}/new?url={url}"
+    data = url.encode("utf-8")
+    req = urllib.request.Request(
+        f"http://localhost:{proxy_port}/new",
+        data=data,
+        headers={"Content-Type": "text/plain"},
+        method="POST",
+    )
     try:
-        with urllib.request.urlopen(req_url, timeout=timeout) as resp:
+        with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read())
             return result.get("targetId") or result.get("target")
     except urllib.error.URLError as e:
