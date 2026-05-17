@@ -30,7 +30,7 @@ def cdp_eval(target, js_code, proxy_port=3456, timeout=15):
     req = urllib.request.Request(
         url,
         data=data,
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        headers={"Content-Type": "text/plain"},
     )
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -44,10 +44,11 @@ def cdp_eval(target, js_code, proxy_port=3456, timeout=15):
 
 def cdp_new_tab(url, proxy_port=3456, timeout=10):
     """创建新的 CDP tab 并返回 targetId"""
-    data = url.encode("utf-8")
+    from urllib.parse import urlencode
+    params = urlencode({'url': url})
     req = urllib.request.Request(
-        f"http://localhost:{proxy_port}/new",
-        data=data,
+        f"http://localhost:{proxy_port}/new?{params}",
+        data=b"",
         headers={"Content-Type": "text/plain"},
         method="POST",
     )
