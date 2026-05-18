@@ -35,11 +35,20 @@ def cdp_eval(target, js_code, proxy_port=3456, timeout=15):
     try:
         with urllib.request.urlopen(req, timeout=timeout) as resp:
             result = json.loads(resp.read())
-            return result.get("value", "")
+            # CDP Proxy 返回 {value: ...} 或 {result: ...}
+            if "value" in result:
+                return result["value"]
+            elif "result" in result:
+                # 处理 {result: {type: "undefined"}} 等情况
+                res = result["result"]
+                if isinstance(res, dict) and res.get("type") == "undefined":
+                    return None
+                return res
+            return None
     except urllib.error.URLError as e:
         raise RuntimeError(f"CDP Proxy 连接失败 (port {proxy_port}): {e}")
-    except json.JSONDecodeError:
-        raise RuntimeError(f"CDP 返回非 JSON 数据")
+    except json.JSONDecodeError as e:
+        raise RuntimeError(f"CDP 返回非 JSON 数据: {e}")
 
 
 def cdp_new_tab(url, proxy_port=3456, timeout=10):
@@ -114,7 +123,7 @@ def scrape_weibo(uid, output_path=None, proxy_port=3456, max_pages=60, rate_limi
 
     print(f"[2/4] 打开微博主页 https://weibo.com/u/{uid} ...")
     target = cdp_new_tab(f"https://weibo.com/u/{uid}", proxy_port)
-    time.sleep(2)  # 等待页面加载
+    time.sleep(3)  # 等待页面加载
     print(f"  targetId: {target}")
 
     # 获取昵称（页面标题格式: "阅州的个人主页 - 微博" → "阅州"）
@@ -127,9 +136,8 @@ def scrape_weibo(uid, output_path=None, proxy_port=3456, max_pages=60, rate_limi
 
     print(f"[3/4] 开始抓取微博...")
 
-    # JS 片段：解析微博列表
+    # JS 片段：解析微博列表（直接代码块，不是 IIFE）
     PARSE_POSTS_JS = """
-    (() => {
       const posts = [];
       for (const post of (json.data.list || [])) {
         const tmp = document.createElement("div");
@@ -144,19 +152,18 @@ def scrape_weibo(uid, output_path=None, proxy_port=3456, max_pages=60, rate_limi
           src: post.source || ""
         });
       }
-      return JSON.stringify({sid: json.data.since_id || "", count: posts.length, posts: posts});
-    })()
+      return {sid: json.data.since_id || "", count: posts.length, posts: posts};
     """
 
     # JS 模板：since_id 链式翻页
     def make_since_id_js(uid, page, since_id):
+        sid_param = f'&since_id={since_id}' if since_id else ''
         return f"""
         (async () => {{
-          const sid = {json.dumps(str(since_id))};
-          const url = "/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0" + (sid ? "&since_id=" + sid : "");
+          const url = "/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0{sid_param}";
           const resp = await fetch(url);
           const json = await resp.json();
-          if (!json.data || !json.data.list || !json.data.list.length) return JSON.stringify({{done: true, count: 0}});
+          if (!json.data || !json.data.list || !json.data.list.length) return {{done: true, count: 0}};
           {PARSE_POSTS_JS}
         }})()
         """
@@ -168,7 +175,7 @@ def scrape_weibo(uid, output_path=None, proxy_port=3456, max_pages=60, rate_limi
           const url = "/ajax/statuses/mymblog?uid={uid}&page={page}&feature=0";
           const resp = await fetch(url);
           const json = await resp.json();
-          if (!json.data || !json.data.list || !json.data.list.length) return JSON.stringify({{count: 0}});
+          if (!json.data || !json.data.list || !json.data.list.length) return {{count: 0}};
           {PARSE_POSTS_JS}
         }})()
         """
@@ -190,11 +197,11 @@ def scrape_weibo(uid, output_path=None, proxy_port=3456, max_pages=60, rate_limi
     print("  Phase 1: since_id 链式翻页...")
     since_id = 0
     for page in range(1, max_pages + 1):
-        result_str = cdp_eval(target, make_since_id_js(uid, page, since_id), proxy_port, timeout=15)
-        try:
-            result = json.loads(result_str)
-        except json.JSONDecodeError:
-            print(f"    ⚠ 第 {page} 页解析失败，Phase 1 终止")
+        result = cdp_eval(target, make_since_id_js(uid, page, since_id), proxy_port, timeout=15)
+
+        # 处理返回值
+        if result is None or not isinstance(result, dict):
+            print(f"    ⚠ 第 {page} 页返回无效: {type(result)}")
             break
 
         if result.get("done"):
@@ -216,10 +223,10 @@ def scrape_weibo(uid, output_path=None, proxy_port=3456, max_pages=60, rate_limi
     empty_streak = 0
     scan_max = max(max_pages + 30, page + 40)  # 至少扫 40 页
     for scan_page in range(page + 1, scan_max + 1):
-        result_str = cdp_eval(target, make_page_js(uid, scan_page), proxy_port, timeout=15)
-        try:
-            result = json.loads(result_str)
-        except json.JSONDecodeError:
+        result = cdp_eval(target, make_page_js(uid, scan_page), proxy_port, timeout=15)
+
+        # 处理返回值
+        if result is None or not isinstance(result, dict):
             empty_streak += 1
             continue
 
