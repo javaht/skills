@@ -1,4 +1,4 @@
 interface:
   display_name: "GitHub Sync Submit"
-  short_description: "Sync latest code before GitHub commits and pushes"
-  default_prompt: "Use $github-submit-sync when submitting code to GitHub so the local branch syncs before commit and push."
+  short_description: "Sync latest code and verify human-only commit identity before GitHub commits and pushes"
+  default_prompt: "Use $github-submit-sync when submitting code to GitHub so the local branch syncs before commit and push, and the commit author/committer metadata contains only the human author identity with no Claude Code or other AI assistant identity."
