@@ -1,4 +1,4 @@
 interface:
   display_name: "推文短文写作"
-  short_description: "根据标题和推文素材以第一作者口吻生成五段式中文短文"
-  default_prompt: "Use $tweet-to-short-article to write a concise five-paragraph Chinese short article in a first-author voice from the given title and tweet materials."
+  short_description: "以第一作者口吻生成五段式中文短文，并去除 AI 套话"
+  default_prompt: "Use $tweet-to-short-article to write a concise five-paragraph Chinese short article in a first-author voice from the given title and tweet materials. Preserve facts, technical details, uncertainty, and author judgment; remove AI-flavored shells and generic conclusions."
