@@ -1,0 +1,4 @@
+interface:
+  display_name: "推文短文写作"
+  short_description: "根据标题和推文素材直接生成有观点、可发布的五段式中文短文"
+  default_prompt: "Use $tweet-to-short-article to turn a title and tweet materials into a concise five-paragraph Chinese short article."
